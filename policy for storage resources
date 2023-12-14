@@ -1,0 +1,52 @@
+
+param policyAssignmentName string = 'storage-restriction'
+param policyDisplayName string = 'Restrict public network access for storage'
+
+var policyDescription = 'This policy restricts public network access for Azure storage.'
+targetScope = 'subscription'
+resource policyDef 'Microsoft.Authorization/policyDefinitions@2021-04-01' = {
+  name: '${policyAssignmentName}-definition'
+  location: 'westus3' // Update with desired location
+ scope:subscription()
+  properties: {
+    displayName: 'RCT Initiative (storage-policy)'
+    description: 'RCT Initiative, which contains essential policy definitions'
+    policyRule: {
+      if: {
+        allOf: [
+          {
+            field: 'type'
+            equals: 'Microsoft.Storage/storageAccounts'
+          }
+        ]
+      }
+      then: {
+        effect: 'Deny'
+        details: {
+          type: 'Microsoft.Storage/storageAccounts'
+          existenceCondition: {
+            field: 'Microsoft.Storage/storageAccounts/publicNetworkAccess'
+            equals: 'Enabled'
+          }
+        }
+      }
+    }
+  }
+}
+
+resource policyAssignment 'Microsoft.Authorization/policyAssignments@2021-04-01' = {
+  name: 'storage-policy-rct-initiative'
+  scope: subscription()
+  location: 'westus3' // Update with desired location
+
+  properties: {
+    displayName: 'RCT Initiative (storage-policy)'
+    description: 'RCT Initiative, which contains essential policy definitions'
+    enforcementMode: 'default'
+
+    policyDefinitionId: 'policyDef.id'
+    parameters: {
+      effect: { value: 'Deny' }
+    }
+  }
+}
